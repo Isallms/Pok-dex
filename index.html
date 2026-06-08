@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokédex</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header" role="banner">
+    <!-- Pokébolas decorativas de fundo -->
+    <div class="header__deco header__deco--left" aria-hidden="true"></div>
+    <div class="header__deco header__deco--right" aria-hidden="true"></div>
+
+    <div class="header__inner">
+
+      <!-- Brand -->
+      <div class="header__brand">
+        <!-- Ícone pokébola SVG -->
+        <div class="header__pokeball" aria-hidden="true">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="48" fill="white" stroke="#222" stroke-width="4"/>
+            <path d="M2 50 Q2 2 50 2 Q98 2 98 50Z" fill="#e63946"/>
+            <rect x="2" y="46" width="96" height="8" fill="#222" rx="4"/>
+            <circle cx="50" cy="50" r="14" fill="white" stroke="#222" stroke-width="4"/>
+            <circle cx="50" cy="50" r="7" fill="#e8e8e8"/>
+          </svg>
+        </div>
+
+        <div class="header__titles">
+          <h1 class="header__title">Pokédex</h1>
+          <p class="header__subtitle">Explore todos os Pokémons</p>
+        </div>
+      </div>
+
+      <!-- Formulário de busca -->
+      <form
+        class="search"
+        id="search-form"
+        role="search"
+        aria-label="Buscar Pokémon"
+        onsubmit="handleSearch(event)"
+      >
+        <div class="search__field">
+          <svg class="search__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input
+            class="search__input"
+            type="text"
+            id="search-input"
+            placeholder="Nome ou número... (ex: pikachu, 25)"
+            aria-label="Nome ou número do Pokémon"
+            autocomplete="off"
+          />
+          <button
+            class="search__clear-btn"
+            type="button"
+            id="clear-btn"
+            aria-label="Limpar busca"
+            onclick="clearSearch()"
+            hidden
+          >✕</button>
+        </div>
+        <button class="search__btn" type="submit" aria-label="Buscar Pokémon">
+          Buscar
+        </button>
+        <button class="search__all-btn" type="button" id="all-btn" aria-label="Ver todos os Pokémons" onclick="clearSearch()" hidden>
+          ↩ Ver todos os Pokémons
+        </button>
+      </form>
+
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main" id="main">
+
+    <!-- Contador / status -->
+    <section class="status-bar" aria-live="polite" aria-atomic="true">
+      <p class="status-bar__text" id="status-text">Carregando Pokémons...</p>
+    </section>
+
+    <!-- Filtros de tipo -->
+    <section class="filters" aria-label="Filtrar por tipo">
+      <div class="filters__list" id="type-filters" role="group" aria-label="Tipos de Pokémon"></div>
+    </section>
+
+    <!-- Grid de pokémons -->
+    <section class="pokedex-grid" aria-label="Lista de Pokémons">
+      <div class="grid" id="pokemon-grid" role="list"></div>
+
+      <!-- Mensagem de erro / vazio -->
+      <div class="empty-state" id="empty-state" hidden>
+        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" alt="" aria-hidden="true" />
+        <p id="empty-state-msg">Nenhum Pokémon encontrado.</p>
+        <p class="empty-state__hint">Use o botão <strong>↩ Ver todos</strong> no topo para voltar à listagem completa.</p>
+      </div>
+
+      <!-- Loader -->
+      <div class="loader" id="loader" aria-label="Carregando" role="status">
+        <div class="loader__ball"></div>
+        <p>Carregando...</p>
+      </div>
+    </section>
+
+    <!-- Paginação (modo listagem) -->
+    <div class="pagination" id="pagination" hidden>
+      <button class="btn btn--outline" id="load-more-btn" onclick="loadMore()">
+        Carregar mais Pokémons
+      </button>
+    </div>
+
+  </main>
+
+  <!-- ===== MODAL DE DETALHES ===== -->
+  <div
+    class="modal-overlay"
+    id="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-pokemon-name"
+    hidden
+    onclick="closeModalOnOverlay(event)"
+  >
+    <article class="modal" id="modal">
+      <button class="modal__close" onclick="closeModal()" aria-label="Fechar detalhes do Pokémon">✕</button>
+
+      <div class="modal__header" id="modal-header">
+        <div class="modal__id" id="modal-id">#001</div>
+        <h2 class="modal__name" id="modal-pokemon-name">Bulbasaur</h2>
+        <div class="modal__types" id="modal-types"></div>
+      </div>
+
+      <div class="modal__body">
+        <div class="modal__image-wrap">
+          <img class="modal__image" id="modal-img" src="" alt="" />
+        </div>
+
+        <div class="modal__info">
+
+          <!-- Stats básicas -->
+          <section class="info-section" aria-label="Informações básicas">
+            <h3 class="info-section__title">Informações</h3>
+            <ul class="info-list" role="list">
+              <li class="info-list__item">
+                <span class="info-list__label">Altura</span>
+                <span class="info-list__value" id="modal-height">—</span>
+              </li>
+              <li class="info-list__item">
+                <span class="info-list__label">Peso</span>
+                <span class="info-list__value" id="modal-weight">—</span>
+              </li>
+              <li class="info-list__item">
+                <span class="info-list__label">Exp. Base</span>
+                <span class="info-list__value" id="modal-exp">—</span>
+              </li>
+            </ul>
+          </section>
+
+          <!-- Habilidades -->
+          <section class="info-section" aria-label="Habilidades">
+            <h3 class="info-section__title">Habilidades</h3>
+            <div class="ability-list" id="modal-abilities"></div>
+          </section>
+
+          <!-- Estatísticas de batalha -->
+          <section class="info-section" aria-label="Estatísticas de batalha">
+            <h3 class="info-section__title">Estatísticas</h3>
+            <ul class="stat-list" id="modal-stats" role="list"></ul>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- Navegação dentro do modal -->
+      <div class="modal__nav">
+        <button class="btn btn--outline btn--sm" id="modal-prev" onclick="navigateModal(-1)" aria-label="Pokémon anterior">
+          ← Anterior
+        </button>
+        <button class="btn btn--outline btn--sm" id="modal-next" onclick="navigateModal(1)" aria-label="Próximo Pokémon">
+          Próximo →
+        </button>
+      </div>
+    </article>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer" role="contentinfo">
+    <p>Dados fornecidos pela <a href="https://pokeapi.co" target="_blank" rel="noopener noreferrer">PokéAPI</a> · Pokémon © Nintendo</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
